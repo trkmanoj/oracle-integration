@@ -6,18 +6,16 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.List;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "acc_operator")
-public class AccOperator {
+@Table(name="tax_details")
+public class TaxGroupAndIndTaxResponse {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(
@@ -26,7 +24,14 @@ public class AccOperator {
     )
     @Type(type = "uuid-char")
     private UUID id;
-    private String agentId;    // operator.agentId
-    private String accLink1;
-    private String accLink2;
+    private UUID taxId;
+
+    private String code;
+    private String description;
+    private String type;
+    private float tax;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "tax_group_id")
+    private List<CustomizedTaxGroup> taxGroup;
 }

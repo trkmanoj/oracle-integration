@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDate;
 
 @Data
@@ -15,9 +14,17 @@ import java.time.LocalDate;
 @Table(name = "acc_ar")
 public class AccAR {
 
-    private String headerId;            // VARCHAR2(50 BYTE)
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "acc_ar_sequence")
+    @SequenceGenerator(
+            name = "acc_ar_sequence",
+            sequenceName = "acc_arr_seq",
+            allocationSize = 1,    // Increment by 1
+            initialValue = 1000000    // Start at 1000000
+    )
+    private Long headerId;            // VARCHAR2(50 BYTE)
     private String source;              // VARCHAR2(30 BYTE)
-    private double batchId;               // NUMBER
+    private Long batchId;               // NUMBER
     private String invoiceClass;        // VARCHAR2(30 BYTE)
     private String trnType;             // VARCHAR2(30 BYTE)
     private String actualCategory;      // Unknown SQL type

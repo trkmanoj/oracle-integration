@@ -12,12 +12,13 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import java.util.UUID;
 
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "acc_operator")
-public class AccOperator {
+@Table(name = "tax")
+public class CustomizedTaxGroup {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(
@@ -25,8 +26,22 @@ public class AccOperator {
             strategy = "org.hibernate.id.UUIDGenerator"
     )
     @Type(type = "uuid-char")
+
     private UUID id;
-    private String agentId;    // operator.agentId
-    private String accLink1;
-    private String accLink2;
+
+    private UUID taxGroupDetailsId;
+
+    private String taxCode;
+    private String taxDescription;
+    private int taxOrder;
+
+//    private Tax tax;
+
+
+    private double percentage;
+
+    private boolean isCosting;
+
+
+
 }
