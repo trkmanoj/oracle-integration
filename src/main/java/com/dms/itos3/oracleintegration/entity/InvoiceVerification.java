@@ -45,4 +45,6 @@ public class InvoiceVerification {
     private String pullInvoiceId;
     private Date pullDate;
     private boolean toggleStatus;
+    private boolean arStatus;
+    private Date arDate;
 }

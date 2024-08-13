@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -24,13 +25,21 @@ public class AccAR {
     )
     private Long headerId;            // VARCHAR2(50 BYTE)
     private String source;              // VARCHAR2(30 BYTE)
+
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "acc_ar_sequence")
+    @SequenceGenerator(
+            name = "acc_ar_sequence",
+            sequenceName = "acc_arr_seq",
+            allocationSize = 1,    // Increment by 1
+            initialValue = 1000000    // Start at 1000000
+    )
     private Long batchId;               // NUMBER
     private String invoiceClass;        // VARCHAR2(30 BYTE)
     private String trnType;             // VARCHAR2(30 BYTE)
     private String actualCategory;      // Unknown SQL type
     private String legalEntity;         // VARCHAR2(30 BYTE)
-    private LocalDate invoiceDate;      // DATE
-    private LocalDate glDate;           // DATE
+    private String invoiceDate;      // DATE
+    private Date glDate;           // DATE
     private String currency;            // VARCHAR2(30 BYTE)
     private double customerCode;          // NUMBER
     private double customerSite;          // NUMBER
