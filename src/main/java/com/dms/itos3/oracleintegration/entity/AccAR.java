@@ -38,8 +38,8 @@ public class AccAR {
     private String trnType;             // VARCHAR2(30 BYTE)
     private String actualCategory;      // Unknown SQL type
     private String legalEntity;         // VARCHAR2(30 BYTE)
-    private String invoiceDate;      // DATE
-    private Date glDate;           // DATE
+    private LocalDate invoiceDate;      // DATE
+    private LocalDate glDate;           // DATE
     private String currency;            // VARCHAR2(30 BYTE)
     private double customerCode;          // NUMBER
     private double customerSite;          // NUMBER

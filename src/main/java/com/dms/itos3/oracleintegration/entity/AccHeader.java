@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Data
 @AllArgsConstructor
@@ -13,11 +12,13 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "acc_header")
 public class AccHeader {
-    /*private String tourTypeId;
-    private String tourType;
-    private String tourTypeName;
-    private String segmentValue;
-    private String accLinkInv;
-    private String accLinkCm;
-    private String distributionSetId;*/
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "acc_ar_sequence")
+    @SequenceGenerator(
+            name = "acc_ar_sequence",
+            sequenceName = "acc_arr_seq",
+            allocationSize = 1,    // Increment by 1
+            initialValue = 1000000    // Start at 1000000
+    )
+    private Long headerId;
 }
