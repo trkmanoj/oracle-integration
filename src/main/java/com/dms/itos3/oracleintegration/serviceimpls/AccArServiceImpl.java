@@ -2,6 +2,9 @@ package com.dms.itos3.oracleintegration.serviceimpls;
 
 import com.dms.itos3.oracleintegration.entity.*;
 import com.dms.itos3.oracleintegration.repository.*;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -15,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -66,6 +71,22 @@ public class AccArServiceImpl {
 
     @Value("${started.batchid}")
     private Long batchId;
+
+    @Value("${remote.host}")
+    private String remoteHost;
+
+    @Value("${host.port}")
+    private int port;
+
+    @Value("${host.username}")
+    private String username;
+
+    @Value("${host.pwd}")
+    private String password;
+
+    @Value("${remote.file.path}")
+    private String remoteFilePath;
+
 
     public AccArServiceImpl(WebClient.Builder webClient) {
         this.webClient = webClient;
@@ -379,6 +400,8 @@ public class AccArServiceImpl {
         }
         generateExcelSheet(accurateList, "Accurate");
         generateExcelSheet(inaccurateList,"Inaccurate");
+
+        syncDocument();
     }
 
     private String generateActualCategoryCode(String tourId,String marketId){
@@ -491,6 +514,32 @@ public class AccArServiceImpl {
     public static String formatDateTime(LocalDateTime date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy_HH:mm:ss");
         return date.format(formatter);
+    }
+
+    public void syncDocument(){
+
+        String localFilePath = System.getProperty("user.home") + "/Documents/Accuratedocument.xlsx";
+
+        try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(username, remoteHost, port);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.connect();
+
+            ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
+            channelSftp.connect();
+
+            File localFile = new File(localFilePath);
+            channelSftp.put(new FileInputStream(localFile), remoteFilePath + "file.xlsx");
+
+            channelSftp.disconnect();
+            session.disconnect();
+
+            System.out.println("File uploaded successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

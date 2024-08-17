@@ -19,8 +19,8 @@ public class Controller {
         accArService.createAr();
     }
 
-    /*@PostMapping("/print")
+    @PostMapping("/print")
     public void print() throws IOException {
-        accArService.generateExcelSheet();
-    }*/
+        accArService.validateAndPrint();
+    }
 }
