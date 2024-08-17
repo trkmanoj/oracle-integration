@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "acc_ar")
+@Table(name = "acc_market")
 public class AccMarket {
     @Id
     @GeneratedValue(generator = "UUID")

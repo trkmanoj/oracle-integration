@@ -32,6 +32,7 @@ public class PullTourHeaderDetails {
         private Date startDate;
         private Date endDate;
         private String tourTypeId;
+        private String createBy;
         private String startActiveCostingPeriod;
         private String activeCostingPeriod;
 

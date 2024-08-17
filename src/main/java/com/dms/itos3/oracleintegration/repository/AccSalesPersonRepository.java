@@ -1,12 +1,12 @@
 package com.dms.itos3.oracleintegration.repository;
 
-import com.dms.itos3.oracleintegration.entity.AccCluster;
+import com.dms.itos3.oracleintegration.entity.AccSalesPerson;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
-
 @Repository
-public interface AccClusterRepository extends JpaRepository<AccCluster, UUID> {
-    AccCluster findByClusterId(String clusterId);
+public interface AccSalesPersonRepository extends JpaRepository<AccSalesPerson, UUID> {
+
+    AccSalesPerson findByUserName(String userName);
 }

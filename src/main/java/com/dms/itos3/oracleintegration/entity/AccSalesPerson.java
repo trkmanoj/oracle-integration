@@ -27,5 +27,6 @@ public class AccSalesPerson {
     @Type(type = "uuid-char")
     private UUID id;
     private String userId;
+    private String userName;
     private String accountLink;
 }

@@ -39,6 +39,8 @@ public class InvoiceVerification {
     private String currency;
     private Double exRate;
     private Double tot;
+    private double invoiceWithoutTax;
+    private double invoiceTax;
     private boolean validate;
     private Date validateDate;
     private String validateBy;

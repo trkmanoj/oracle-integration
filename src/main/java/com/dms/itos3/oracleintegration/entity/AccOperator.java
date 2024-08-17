@@ -27,6 +27,6 @@ public class AccOperator {
     @Type(type = "uuid-char")
     private UUID id;
     private String agentId;    // operator.agentId
-    private String accLink1;
-    private String accLink2;
+    private int accLink1;
+    private int accLink2;
 }
