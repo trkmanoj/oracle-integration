@@ -100,7 +100,7 @@ public class AccArServiceImpl {
         List<InvoiceVerification> invoiceVerificationList = invoiceVerificationRepository.findByArStatus(false);
 
         if (accArRepository.findTopByOrderByBatchId() != null)
-            batchId = accArRepository.findTopByOrderByBatchId().getBatchId();
+            batchId = accArRepository.findTopByOrderByBatchId().getBatchId() + 1;
 
         /*List<InvoiceVerification> testInvoiceVerificationList = new ArrayList<>();
         testInvoiceVerificationList.add(invoiceVerificationList.get(0));
