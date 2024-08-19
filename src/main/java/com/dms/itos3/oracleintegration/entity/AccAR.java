@@ -26,7 +26,7 @@ public class AccAR {
             initialValue = 1000000    // Start at 1000000
     )
     private Long headerId;            // VARCHAR2(50 BYTE)
-    private UUID invoiceId;           //post-itos invoice id
+    private UUID invoiceId;           //
     private String source;              // VARCHAR2(30 BYTE)
     private Long batchId;               // NUMBER
     private String invoiceClass;        // VARCHAR2(30 BYTE)

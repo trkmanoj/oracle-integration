@@ -31,6 +31,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,14 +94,14 @@ public class AccArServiceImpl {
     }
 
 
-    //set scheduler
+    @Scheduled(cron = "0 0 18 * * ?")
     @Transactional
     public void createAr(){
 
         List<InvoiceVerification> invoiceVerificationList = invoiceVerificationRepository.findByArStatus(false);
 
-        if (accArRepository.findTopByOrderByBatchId() != null)
-            batchId = accArRepository.findTopByOrderByBatchId().getBatchId() + 1;
+        if (accArRepository.findTopByOrderByBatchIdDesc() != null)
+            batchId = accArRepository.findTopByOrderByBatchIdDesc().getBatchId() + 1;
 
         /*List<InvoiceVerification> testInvoiceVerificationList = new ArrayList<>();
         testInvoiceVerificationList.add(invoiceVerificationList.get(0));
@@ -162,7 +163,6 @@ public class AccArServiceImpl {
 
     }
 
-    //@Scheduled(fixedRate = 20000)
     @Transactional
     public void generateExcelSheet(List<AccAR> accARList, String type) throws IOException {
 
@@ -303,7 +303,13 @@ public class AccArServiceImpl {
             }
 
             // Define the file path where the Excel file will be saved
-            String fileName = type + "document.xlsx";
+            String fileName;
+            if (type.equals("Accurate")){
+                fileName = "AR document.xlsx";
+            }else {
+                fileName = "Inaccurate AR document.xlsx";
+            }
+
             Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
 
             // Write the output to a file
@@ -348,7 +354,7 @@ public class AccArServiceImpl {
     }
 
     @Transactional
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 0 19 * * ?")
     public void validateAndPrint() throws IOException {
 
         List<AccAR> accurateList = new ArrayList<>();
@@ -404,6 +410,88 @@ public class AccArServiceImpl {
         syncDocument();
     }
 
+    public void syncDocument(){
+
+        String localFilePath = System.getProperty("user.home") + "/Documents/AR document.xlsx.xlsx";
+
+        try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(username, remoteHost, port);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.connect();
+
+            ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
+            channelSftp.connect();
+
+            File localFile = new File(localFilePath);
+            channelSftp.put(new FileInputStream(localFile), remoteFilePath + "file.xlsx");
+
+            channelSftp.disconnect();
+            session.disconnect();
+
+            log.info("File uploaded successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Transactional
+    public void reCheckAndUpdateArs(){
+        List<AccAR> accARS = accArRepository.findAllMissingArs("");
+
+        List<AccAR> updatedArs = accARS.stream().map(
+                accAR -> {
+                    InvoiceVerification inv = invoiceVerificationRepository.findById(accAR.getInvoiceId()).get();
+                    return new AccAR(
+                            accAR.getHeaderId(),
+                            inv.getId(),
+                            "ITOS",
+                            accAR.getBatchId(), //batch id should be the same value for bulk of records
+                            inv.getType().equals("Invoice") || inv.getType().equals("Supplementary") ? "INV" : "CM",
+                            getAccCategory(inv.getTourHeaderID(),inv.getType()),
+                            generateActualCategoryCode(inv.getTourHeaderID(),inv.getMarketId()),// actual-categoty (combination of tble values)
+                            "I",
+                            stringDateConvertToLocalDate(inv.getDate()),
+                            LocalDate.now(),
+                            inv.getCurrency(), // LKR or itos-side invoice currency
+                            getOperator(inv.getOperatorId()) == null ? null : getOperator(inv.getOperatorId()).getAccLink2(),  // customer code
+                            getOperator(inv.getOperatorId()) == null ? null : getOperator(inv.getOperatorId()).getAccLink1(), // customer site
+                            findUser(inv.getTourHeaderID()), // sales person
+                            1,
+                            inv.getInvoiceWithoutTax(),
+                            "VAT",
+                            inv.getInvoiceTax(),
+                            18, //vat rate
+                            "",
+                            0,
+                            0,
+                            "",
+                            0,
+                            0,
+                            inv.getType().equals("Invoice") || inv.getType().equals("Supplementary") ? "INV RF24INV00048" : "CRN RF24INV00048",
+                            "", // invoice description
+                            findTourDetails(inv.getTourHeaderID()) == null ? null : findTourDetails(inv.getTourHeaderID()).getTourNo(),
+                            findTourDetails(inv.getTourHeaderID()) == null ? null : findTourDetails(inv.getTourHeaderID()).getTourName(),
+                            findTourDetails(inv.getTourHeaderID()) == null ? null : findTourCategory(inv.getTourHeaderID()).getTourType(),
+                            formatDateTime(LocalDateTime.now()),
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            false,
+                            null,
+                            "");
+                }).collect(Collectors.toList());
+
+        accArRepository.saveAll(updatedArs);
+    }
+
     private String generateActualCategoryCode(String tourId,String marketId){
         StringBuilder code = new StringBuilder("01.01.");
 
@@ -448,7 +536,7 @@ public class AccArServiceImpl {
 
         String agentId = webClient.build()
                 .get()
-                .uri(financeBaseUrl + "/agentByOperator/" + operatorId)
+                .uri(financeBaseUrl + "/agentByOperatorId/" + operatorId)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
@@ -514,32 +602,6 @@ public class AccArServiceImpl {
     public static String formatDateTime(LocalDateTime date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy_HH:mm:ss");
         return date.format(formatter);
-    }
-
-    public void syncDocument(){
-
-        String localFilePath = System.getProperty("user.home") + "/Documents/Accuratedocument.xlsx";
-
-        try {
-            JSch jsch = new JSch();
-            Session session = jsch.getSession(username, remoteHost, port);
-            session.setPassword(password);
-            session.setConfig("StrictHostKeyChecking", "no");
-            session.connect();
-
-            ChannelSftp channelSftp = (ChannelSftp) session.openChannel("sftp");
-            channelSftp.connect();
-
-            File localFile = new File(localFilePath);
-            channelSftp.put(new FileInputStream(localFile), remoteFilePath + "file.xlsx");
-
-            channelSftp.disconnect();
-            session.disconnect();
-
-            System.out.println("File uploaded successfully.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

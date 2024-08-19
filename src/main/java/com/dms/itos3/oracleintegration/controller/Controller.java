@@ -16,7 +16,7 @@ public class Controller {
 
     @PostMapping("/save")
     public void saveInvoice(){
-        accArService.createAr();
+        accArService.reCheckAndUpdateArs();
     }
 
     @PostMapping("/print")

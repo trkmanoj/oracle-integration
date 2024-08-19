@@ -28,5 +28,8 @@ public interface AccArRepository extends JpaRepository<AccAR,Long> {
 
     List<AccAR> findByPrinted(boolean b);
 
-    AccAR findTopByOrderByBatchId();
+    AccAR findTopByOrderByBatchIdDesc();
+
+    @Query(value = "SELECT * FROM acc_ar where remarks != ?1", nativeQuery = true)
+    List<AccAR> findAllMissingArs(String remarks);
 }
