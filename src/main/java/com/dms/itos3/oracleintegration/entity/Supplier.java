@@ -53,6 +53,7 @@ public class Supplier {
     private String accountCode;
     private String accountName;
     private Integer creditPeriod;
+    private String siteCode;//sitecode ADDED
 
 
 }
