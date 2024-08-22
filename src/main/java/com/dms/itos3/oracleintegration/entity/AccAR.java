@@ -67,4 +67,5 @@ public class AccAR {
     private boolean printed;
     private LocalDateTime printedDateTime;
     private String remarks;
+    private String invoiceType;
 }

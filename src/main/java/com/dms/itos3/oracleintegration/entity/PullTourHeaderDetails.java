@@ -35,6 +35,8 @@ public class PullTourHeaderDetails {
         private String createBy;
         private String startActiveCostingPeriod;
         private String activeCostingPeriod;
+        private String marketId;
+        private String operatorId;
 
 
 }

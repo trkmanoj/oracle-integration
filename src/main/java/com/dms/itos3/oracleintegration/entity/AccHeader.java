@@ -32,5 +32,7 @@ public class AccHeader {
     private double subCategory2Total;
     private String subCategory3;
     private double subCategory3Total;
+    private boolean printed;
+    private LocalDateTime printedDateTime;
 
 }

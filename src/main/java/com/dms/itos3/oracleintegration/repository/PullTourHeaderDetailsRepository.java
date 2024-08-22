@@ -9,4 +9,6 @@ import java.util.UUID;
 @Repository
 public interface PullTourHeaderDetailsRepository extends JpaRepository<PullTourHeaderDetails, UUID> {
     PullTourHeaderDetails findByTourId(String tourId);
+
+
 }
