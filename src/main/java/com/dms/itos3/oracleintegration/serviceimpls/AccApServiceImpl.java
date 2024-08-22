@@ -369,9 +369,9 @@ public class AccApServiceImpl {
 
             // Define the file path where the Excel file will be saved
             if (type.equals("Accurate")){
-                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_AR.xlsx";
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_AP.xlsx";
             }else {
-                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_INACCURATE_AR.xlsx";
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_INACCURATE_AP.xlsx";
             }
 
             Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
