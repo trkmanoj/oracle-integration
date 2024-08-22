@@ -505,7 +505,7 @@ public class AccArServiceImpl {
 
     public void printHeader(){
 
-        List<AccHeader> accHeaders = accHeaderRepository.findAll();
+        List<AccHeader> accHeaders = accHeaderRepository.findLast2Records();
 
         String fileName = "";
         Workbook workbook = null;

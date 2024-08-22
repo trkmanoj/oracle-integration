@@ -39,8 +39,8 @@ public interface BillVerificationRepository extends JpaRepository<BillVerificati
 
     @Modifying
     @Transactional
-    @Query("UPDATE BillVerification i SET i.ApStatus = :arStatus, i.apDate = :arDate WHERE i.id IN :ids")
-    void updateInvoiceVerification(@Param("arStatus") boolean apStatus, @Param("apDate") Date apDate, @Param("ids") List<UUID> ids);
+    @Query("UPDATE BillVerification i SET i.ApStatus = :apStatus, i.apDate = :apDate WHERE i.id IN :ids")
+    void updateInvoiceVerification(@Param("apStatus") boolean apStatus, @Param("apDate") Date apDate, @Param("ids") List<UUID> ids);
 }
 
 //    @Query(value = "SELECT * FROM programme_miscellaneous pa WHERE pa.popUpType = ?1 AND pa.miscellaneousType = ?2 AND pa.detail_id =?3 ",nativeQuery = true)
