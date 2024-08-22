@@ -154,7 +154,7 @@ public class AccApServiceImpl {
                     siteCode, //siteCode===postitos need to add
                     billVerification.getBillDate().toString(), // bill entry date(bill date )
                     currentTime.format(timeFormatterDateOnly), //fill write date
-                    generateActualCategoryCode(pullTourHeaderDetails.getTourId(),pullTourHeaderDetails.getMarketID()), //actual category
+                    generateActualCategoryCode(pullTourHeaderDetails.getTourId(),pullTourHeaderDetails.getMarketId()), //actual category
                     "STANDARD",
                     billVerification.getSupplierBillNo(),  //supplier bill no
                     "LKR",  //supplier bill currency code

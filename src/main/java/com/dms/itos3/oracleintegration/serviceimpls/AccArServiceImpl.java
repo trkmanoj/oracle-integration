@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,8 +65,8 @@ public class AccArServiceImpl {
 
     private final WebClient.Builder webClient;
 
-    @Value("${finance.base.url}")
-    private String financeBaseUrl;
+    @Value("${operator.base.url}")
+    private String operatorBaseUrl;
 
     @Value("${started.batchid}")
     private Long batchId;
@@ -90,6 +88,9 @@ public class AccArServiceImpl {
 
     @Value("${vat.code}")
     private String vatCode;
+
+    @Value("${finance.base.url}")
+    private String financeBaseUrl;
 
 
     public AccArServiceImpl(WebClient.Builder webClient) {
@@ -129,7 +130,7 @@ public class AccArServiceImpl {
                         findUser(inv.getTourHeaderID()) == null ? "" : findUser(inv.getTourHeaderID()), // sales person
                         1,
                         inv.getInvoiceWithoutTax(),
-                        vatCode,//vat18
+                        "VAT",//vat18
                         inv.getInvoiceTax(),
                         18, //vat rate
                         "",
@@ -469,7 +470,7 @@ public class AccArServiceImpl {
                             findUser(inv.getTourHeaderID()) == null ? "" : findUser(inv.getTourHeaderID()), // sales person
                             1,
                             inv.getInvoiceWithoutTax(),
-                            vatCode,//vat18
+                            "VAT",//vat18
                             inv.getInvoiceTax(),
                             18, //vat rate
                             "",
@@ -633,7 +634,7 @@ public class AccArServiceImpl {
 
         String agentId = webClient.build()
                 .get()
-                .uri(financeBaseUrl + "/agentByOperatorId/" + operatorId)
+                .uri(operatorBaseUrl + "/agentByOperatorId/" + operatorId)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
@@ -670,7 +671,7 @@ public class AccArServiceImpl {
 
         String clusterId = webClient.build()
                 .get()
-                .uri(financeBaseUrl + "/market/clusterIdByMarket/" + marketId)
+                .uri(operatorBaseUrl + "/market/clusterIdByMarket/" + marketId)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
@@ -710,5 +711,24 @@ public class AccArServiceImpl {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy HHmm");
         return date.format(formatter);
     }
+
+    /*private double getTaxRate(String taxCode) {
+        //HashMap<String, Object> hotel = null;
+        if (!taxCode.equals("") || !taxCode.equals(null)) {
+            ResponseEntity<CommonResponse> response = webClient.build()
+                    .get()
+                    .uri(accommodationBaseUrl + "/hotel/" + hotelId)
+                    .retrieve()
+                    .toEntity(CommonResponse.class)
+                    .block();
+
+            if (response.getBody().getStatus() == CommonConst.SUCCESS_CODE) {
+                hotel = (HashMap<String, Object>) response.getBody().getPayload().get(0);
+            } else {
+                log.info("Error occurred while the get hotel details rest call.");
+            }
+        }
+        return hotel;
+    }*/
 
 }
