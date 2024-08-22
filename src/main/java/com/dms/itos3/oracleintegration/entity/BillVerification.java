@@ -26,7 +26,7 @@ public class BillVerification {
     )
     @Type(type = "uuid-char")
     private UUID billId;
-    private Date billDate;
+    private Date billDate; // need to check
     private double amountWithoutTaxes;
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "billId",referencedColumnName = "billId")
@@ -48,5 +48,8 @@ public class BillVerification {
     private double commission;
     private double addition;
     private String transportSupplier;
+    private String supplierBillNo;
+    private boolean ApStatus;// added for oracle intergration
+    private Date apDate;
 
 }
