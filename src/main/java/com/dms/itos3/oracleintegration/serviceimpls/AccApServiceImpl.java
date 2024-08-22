@@ -90,14 +90,11 @@ public class AccApServiceImpl {
         this.webClient = webClient;
     }
 
-
+    //@Scheduled(cron = "0 0 18 * * ?")
+    @Transactional
     public void createAP() {
         log.info("Start saveAPData method: ");
 
-        if (accApRepository.findTopByOrderByBatchId() != null)
-            batchId = accApRepository.findTopByOrderByBatchId().getBatchId() + 1;
-
-        System.out.println("batchID:=>"+ batchId);
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         DateTimeFormatter timeFormatterDateOnly = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -108,6 +105,12 @@ public class AccApServiceImpl {
         System.out.println("print=>"+ billVerificationList);
 
         List<AccAP> accAPS = billVerificationList.stream().map(billVerification -> {
+
+            if (accApRepository.findTopByOrderByBatchId() != null)
+                batchId = accApRepository.findTopByOrderByBatchId().getBatchId() + 1;
+
+            System.out.println("batchID:=>"+ batchId);
+
 
             System.out.println("tourId=>"+billVerification.getTourId());
             //getting tourId
@@ -135,10 +138,18 @@ public class AccApServiceImpl {
             System.out.println("billAmount=>"+ supplierBillAmount);
             Double vatAmount = billVerification.getTaxes().stream().filter(billTaxes -> billTaxes.getTaxCode().equals("VAT18")).mapToDouble(BillTaxes::getTaxAmount).sum();
             System.out.println("vatAmount=>"+ vatAmount);
-            String taxCodeId = billVerification.getTaxes().stream().filter(billTaxes -> billTaxes.getTaxCode().equals("VAT18")).collect(Collectors.toList()).get(0).getTaxCode();
-            System.out.println("taxAmount=>"+ taxCodeId);
+            String taxCodeId = billVerificationRepository.findTaxCode(billVerification.getBillId().toString());
+           // String taxCodeId = billVerification.getTaxes().stream().filter(billTaxes -> billTaxes.getTaxCode().equals("VAT18")).collect(Collectors.toList()).get(0).getTaxCode();
+           System.out.println("taxCode=>"+ taxCodeId);
 
             TaxGroupAndIndividualTaxResponseDto tax = this.getTax(taxCodeId);
+            double vatRate;
+            if(tax != null){
+                vatRate = tax.getTax();
+            }else {
+                vatRate=0.00;
+            }
+            //TaxGroupAndIndividualTaxResponseDto tax = this.getTax("a81f22ba-3e6b-4973-b49b-60d697b55118");
 
 
             //batch id no idea
@@ -161,7 +172,7 @@ public class AccApServiceImpl {
                     supplierBillAmount,  //Supplier bill amount (without VAT)
                     "VAT", //
                     vatAmount,  //VAT amount for the supplier bill value
-                    tax.getTax(), //VAT Rate
+                    vatRate, //VAT Rate
                     "",  //empty
                     0.00,  //empty,
                     0.00,// empty
@@ -193,7 +204,7 @@ public class AccApServiceImpl {
 
         accApRepository.saveAll(accAPS);
 
-        billVerificationRepository.updateInvoiceVerification(true, new Date(),accAPS.stream().map(AccAP::getBillId).collect(Collectors.toList()));
+        billVerificationRepository.updateBillVerification(true, new Date(),accAPS.stream().map(AccAP::getBillId).collect(Collectors.toList()));
 
     }
 
@@ -216,6 +227,7 @@ public class AccApServiceImpl {
     @Transactional
     public void generateExcelSheet(List<AccAP> accAPList, String type) throws IOException {
 
+        String fileName = "";
         Workbook workbook = null;
         FileOutputStream fileOut = null;
         try {
@@ -356,7 +368,12 @@ public class AccApServiceImpl {
             }
 
             // Define the file path where the Excel file will be saved
-            String fileName = type + "document.xlsx";
+            if (type.equals("Accurate")){
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_AR.xlsx";
+            }else {
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_INACCURATE_AR.xlsx";
+            }
+
             Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
 
             // Write the output to a file
@@ -383,20 +400,24 @@ public class AccApServiceImpl {
             }
         }
 
-//        if (type.equals("Accurate")){
-//            accHeaderRepository.save(new AccHeader(
-//                    null,
-//                    LocalDateTime.now(),
-//                    "AP",
-//                    accAPList.get(0).getBatchId().toString(),
-//                    accAPList.size(),
-//                    null, //no clear idea about sub category details
-//                    accAPList.stream().mapToDouble(AccAR::getInvoiceAmount).sum(),
-//                    null,
-//                    0,
-//                    null,
-//                    0));
-//        }
+        syncDocument(fileName);
+
+        if (type.equals("Accurate")){
+            accHeaderRepository.save(new AccHeader(
+                    null,
+                    LocalDateTime.now(),
+                    "AP",
+                    accAPList.get(0).getBatchId().toString(),
+                    accAPList.size(),
+                    "ALL", //no clear idea about sub category details
+                    accAPList.stream().mapToDouble(AccAP::getAmount).sum(),
+                    "",
+                    0,
+                    "",
+                    0,
+                    false,
+                    null));
+        }
 
    }
 
@@ -447,8 +468,8 @@ public class AccApServiceImpl {
         return accClusterRepository.findByClusterId(clusterId);
     }
 
-//    @Transactional
-//    @Scheduled(fixedRate = 660000)
+    @Transactional
+//@Scheduled(cron = "0 0 19 * * ?")
     public void validateAndPrint() throws IOException {
 
         List<AccAP> accurateList = new ArrayList<>();
@@ -461,33 +482,35 @@ public class AccApServiceImpl {
             StringBuilder errorMsg = new StringBuilder();
 
             if (accAP.getSupplierName() == null || accAP.getSupplierName().equals(""))
-                errorMsg.append("SUPPLIER_NAME, ");
+                errorMsg.append("SUPPLIER_NAME IS REQUIRED, ");
             if (accAP.getSupplierCode() == null || accAP.getSupplierCode().equals(""))
-                errorMsg.append("SUPP_CODE, ");
+                errorMsg.append("SUPP_CODE IS REQUIRED, ");
             if (accAP.getSiteCode() == null || accAP.getSiteCode().equals(""))
-                errorMsg.append("SITE_CODE, ");
+                errorMsg.append("SITE_CODE IS REQUIRED, ");
             if (accAP.getInvoiceType() == null || accAP.getInvoiceType().equals(""))
-                errorMsg.append("INV_TYPE, ");
+                errorMsg.append("INV_TYPE IS REQUIRED, ");
+            if(accAP.getInvoiceNo() == null || accAP.getInvoiceNo().equals(""))
+                errorMsg.append("INV_NO IS REQUIRED, ");
             if (accAP.getActualCategory() == null || accAP.getActualCategory().equals("") || accAP.getActualCategory().contains("..")) // check contains if i added some keyword in save method
-                errorMsg.append("ACTUAL_CATEGORY, ");
+                errorMsg.append("ACTUAL_CATEGORY IS REQUIRED, ");
             if (accAP.getLegalEntity() == null || accAP.getLegalEntity().equals(""))
-                errorMsg.append("LEGAL_ENTITY, ");
+                errorMsg.append("LEGAL_ENTITY IS REQUIRED, ");
             if (accAP.getInvoiceDate() == null)
-                errorMsg.append("INVOICE_DATE, ");
+                errorMsg.append("INVOICE_DATE IS REQUIRED, ");
             if (accAP.getGlDate() == null)
-                errorMsg.append("GL_DATE, ");
+                errorMsg.append("GL_DATE IS REQUIRED, ");
             if (accAP.getCurrencyCode() == null || accAP.getCurrencyCode().equals(""))
-                errorMsg.append("CURRENCY_CODE, ");
+                errorMsg.append("CURRENCY_CODE IS REQUIRED, ");
             if (accAP.getDestributionSetName() == null || accAP.getDestributionSetName().equals(""))
-                errorMsg.append("DISTRIBUTION_SET_NAME, ");
+                errorMsg.append("DISTRIBUTION_SET_NAME IS REQUIRED, ");
             if (accAP.getAttribute1() == null || accAP.getAttribute1().equals(""))
-                errorMsg.append("ATTRIBUTE1, ");
+                errorMsg.append("ATTRIBUTE1 IS REQUIRED, ");
             if (accAP.getAttribute2() == null || accAP.getAttribute2().equals(""))
-                errorMsg.append("ATTRIBUTE2, ");
+                errorMsg.append("ATTRIBUTE2 IS REQUIRED, ");
             if (accAP.getAttribute3() == null || accAP.getAttribute3().equals(""))
-                errorMsg.append("ATTRIBUTE3, ");
+                errorMsg.append("ATTRIBUTE3 IS REQUIRED, ");
             if (accAP.getAttribute4() == null || accAP.getAttribute4().equals(""))
-                errorMsg.append("ATTRIBUTE4, ");
+                errorMsg.append("ATTRIBUTE4 IS REQUIRED, ");
 
             if (errorMsg.length() != 0){
                 accAP.setRemarks(errorMsg.toString());
@@ -498,10 +521,13 @@ public class AccApServiceImpl {
             }
 
         }
-        generateExcelSheet(accurateList, "Accurate");
-        generateExcelSheet(inaccurateList,"Inaccurate");
 
-        //syncDocument();
+        if (!accurateList.isEmpty())
+            generateExcelSheet(accurateList, "Accurate");
+        if (!inaccurateList.isEmpty())
+            generateExcelSheet(inaccurateList,"Inaccurate");
+
+       // syncDocument(String fileName);
     }
 
     private AccCategory getCategory(String categoryId){
@@ -517,9 +543,9 @@ public class AccApServiceImpl {
         return supplierRepository.findBySupplierId(supplierId);
     }
 
-    public void syncDocument(){
+    public void syncDocument(String fileName){
 
-        String localFilePath = System.getProperty("user.home") + "/Documents/Accuratedocument.xlsx";
+        String localFilePath = System.getProperty("user.home") + "/Documents/"+fileName;
 
         try {
             JSch jsch = new JSch();
@@ -532,14 +558,106 @@ public class AccApServiceImpl {
             channelSftp.connect();
 
             File localFile = new File(localFilePath);
-            channelSftp.put(new FileInputStream(localFile), remoteFilePath + "file.xlsx");
+            channelSftp.put(new FileInputStream(localFile), remoteFilePath + fileName);
 
             channelSftp.disconnect();
             session.disconnect();
 
-            System.out.println("File uploaded successfully.");
+            log.info("File uploaded successfully.");
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void printHeader(){
+
+        List<AccHeader> accHeaders = accHeaderRepository.findAll();
+
+        String fileName = "";
+        Workbook workbook = null;
+        FileOutputStream fileOut = null;
+        try {
+            // Create a workbook and a sheet
+            workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Sheet");
+
+            // Create a header row
+            Row headerRow = sheet.createRow(0);
+            Cell cell = headerRow.createCell(0);
+            cell.setCellValue("TRANS_DATE");
+            cell = headerRow.createCell(1);
+            cell.setCellValue("TYPE");
+            cell = headerRow.createCell(2);
+            cell.setCellValue("BATCH_ID");
+            cell = headerRow.createCell(3);
+            cell.setCellValue("RECORD_COUNT");
+            cell = headerRow.createCell(4);
+            cell.setCellValue("SUB_CATEGORY_1");
+            cell = headerRow.createCell(5);
+            cell.setCellValue("SUB_CATEGORY_1_TOTAL");
+            cell = headerRow.createCell(6);
+            cell.setCellValue("SUB_CATEGORY_2");
+            cell = headerRow.createCell(7);
+            cell.setCellValue("SUB_CATEGORY_2_TOTAL");
+            cell = headerRow.createCell(8);
+            cell.setCellValue("SUB_CATEGORY_3");
+            cell = headerRow.createCell(9);
+            cell.setCellValue("SUB_CATEGORY_3_TOTAL");
+
+
+            int rowNumber = 1;
+            for (AccHeader ar : accHeaders) {
+                Row dataRow = sheet.createRow(rowNumber);
+                dataRow.createCell(0).setCellValue(ar.getTransDate());
+                dataRow.createCell(1).setCellValue(ar.getType());
+                dataRow.createCell(2).setCellValue(ar.getBatchId());
+                dataRow.createCell(3).setCellValue(ar.getRecordCount());
+                dataRow.createCell(4).setCellValue(ar.getSubCategory1());
+                dataRow.createCell(5).setCellValue(ar.getSubCategory1Total());
+                dataRow.createCell(6).setCellValue("");
+                dataRow.createCell(7).setCellValue(0);
+                dataRow.createCell(8).setCellValue("");
+                dataRow.createCell(9).setCellValue(0);
+
+                accHeaderRepository.updateAccHeaderDetails(true,LocalDateTime.now(),ar.getHeaderId());
+
+                rowNumber++;
+
+            }
+
+            // Define the file path where the Excel file will be saved
+            fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_HEADER.xlsx";
+
+            Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
+
+            // Write the output to a file
+            fileOut = new FileOutputStream(filePath.toFile());
+            workbook.write(fileOut);
+            log.info("Excel file created successfully at " + filePath.toString());;
+
+            // Return the path of the created file
+            //return filePath.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            //return null;
+        } finally {
+            try {
+                // Ensure that the workbook and file output stream are closed
+                if (workbook != null) {
+                    workbook.close();
+                }
+                if (fileOut != null) {
+                    fileOut.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        syncDocument(fileName);
+    }
+
+    public static String formatDateTimeForFileName(LocalDateTime date) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy HHmm");
+        return date.format(formatter);
     }
 }
