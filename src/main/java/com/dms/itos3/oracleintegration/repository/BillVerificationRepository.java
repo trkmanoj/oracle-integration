@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-@EnableJpaRepositories
 public interface BillVerificationRepository extends JpaRepository<BillVerification, UUID> {
 
     @Query(value = "SELECT * FROM cost_bill_verification cbv where verified =1 and apStatus =1",nativeQuery = true)
@@ -31,16 +30,18 @@ public interface BillVerificationRepository extends JpaRepository<BillVerificati
             "left join cost_bill_verification_taxes cbvt on cbvt.billId = cbv.billId\n" +
             "where cbvt.taxCode='VAT18' and cbv.tourId = :tourId",nativeQuery = true)
     Double findVatAmount(@Param("tourId") String tourId);
-@Query(value = "select cbvt.taxAmount\n" +
-        "from cost_bill_verification cbv\n" +
-        "left join cost_bill_verification_taxes cbvt on cbvt.billId = cbv.billId\n" +
-        "where cbvt.taxCode='VAT18' and cbv.tourId = :tourId",nativeQuery = true )
-    String findTaxCode(@Param("tourId") String tourId);
+@Query(value = "SELECT cbvt.taxCodeId\n" +
+        "FROM cost_bill_verification cbv\n" +
+        "LEFT JOIN cost_bill_verification_taxes cbvt \n" +
+        "    ON cbv.billId = cbvt.billId\n" +
+        "WHERE cbvt.billId = :billId\n" +
+        "  AND cbvt.taxCode = 'VAT18'",nativeQuery = true )
+    String findTaxCode(@Param("billId") String billId);
 
     @Modifying
     @Transactional
-    @Query("UPDATE BillVerification i SET i.ApStatus = :apStatus, i.apDate = :apDate WHERE i.id IN :ids")
-    void updateInvoiceVerification(@Param("apStatus") boolean apStatus, @Param("apDate") Date apDate, @Param("ids") List<UUID> ids);
+    @Query("UPDATE BillVerification i SET i.ApStatus = :apStatus, i.apDate = :apDate WHERE i.billId IN :ids")
+    void updateBillVerification(@Param("apStatus") boolean apStatus, @Param("apDate") Date apDate, @Param("ids") List<UUID> ids);
 }
 
 //    @Query(value = "SELECT * FROM programme_miscellaneous pa WHERE pa.popUpType = ?1 AND pa.miscellaneousType = ?2 AND pa.detail_id =?3 ",nativeQuery = true)
