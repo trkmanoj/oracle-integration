@@ -505,89 +505,94 @@ public class AccArServiceImpl {
 
     public void printHeader(){
 
-        List<AccHeader> accHeaders = accHeaderRepository.findLast2Records();
+        List<AccHeader> accHeaders = accHeaderRepository.findByPrinted(false);
 
-        String fileName = "";
-        Workbook workbook = null;
-        FileOutputStream fileOut = null;
-        try {
-            // Create a workbook and a sheet
-            workbook = new XSSFWorkbook();
-            Sheet sheet = workbook.createSheet("Sheet");
+        if (!accHeaders.isEmpty()){
 
-            // Create a header row
-            Row headerRow = sheet.createRow(0);
-            Cell cell = headerRow.createCell(0);
-            cell.setCellValue("TRANS_DATE");
-            cell = headerRow.createCell(1);
-            cell.setCellValue("TYPE");
-            cell = headerRow.createCell(2);
-            cell.setCellValue("BATCH_ID");
-            cell = headerRow.createCell(3);
-            cell.setCellValue("RECORD_COUNT");
-            cell = headerRow.createCell(4);
-            cell.setCellValue("SUB_CATEGORY_1");
-            cell = headerRow.createCell(5);
-            cell.setCellValue("SUB_CATEGORY_1_TOTAL");
-            cell = headerRow.createCell(6);
-            cell.setCellValue("SUB_CATEGORY_2");
-            cell = headerRow.createCell(7);
-            cell.setCellValue("SUB_CATEGORY_2_TOTAL");
-            cell = headerRow.createCell(8);
-            cell.setCellValue("SUB_CATEGORY_3");
-            cell = headerRow.createCell(9);
-            cell.setCellValue("SUB_CATEGORY_3_TOTAL");
-
-
-            int rowNumber = 1;
-            for (AccHeader ar : accHeaders) {
-                Row dataRow = sheet.createRow(rowNumber);
-                dataRow.createCell(0).setCellValue(ar.getTransDate());
-                dataRow.createCell(1).setCellValue(ar.getType());
-                dataRow.createCell(2).setCellValue(ar.getBatchId());
-                dataRow.createCell(3).setCellValue(ar.getRecordCount());
-                dataRow.createCell(4).setCellValue(ar.getSubCategory1());
-                dataRow.createCell(5).setCellValue(ar.getSubCategory1Total());
-                dataRow.createCell(6).setCellValue(ar.getSubCategory2());
-                dataRow.createCell(7).setCellValue(ar.getSubCategory2Total());
-                dataRow.createCell(8).setCellValue(ar.getSubCategory3());
-                dataRow.createCell(9).setCellValue(ar.getSubCategory3Total());
-
-                accHeaderRepository.updateAccHeaderDetails(true,LocalDateTime.now(),ar.getHeaderId());
-
-                rowNumber++;
-
-            }
-
-            // Define the file path where the Excel file will be saved
-            fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_HEADER.xlsx";
-
-            Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
-
-            // Write the output to a file
-            fileOut = new FileOutputStream(filePath.toFile());
-            workbook.write(fileOut);
-            log.info("Excel file created successfully at " + filePath.toString());;
-
-            // Return the path of the created file
-            //return filePath.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            //return null;
-        } finally {
+            String fileName = "";
+            Workbook workbook = null;
+            FileOutputStream fileOut = null;
             try {
-                // Ensure that the workbook and file output stream are closed
-                if (workbook != null) {
-                    workbook.close();
+                // Create a workbook and a sheet
+                workbook = new XSSFWorkbook();
+                Sheet sheet = workbook.createSheet("Sheet");
+
+                // Create a header row
+                Row headerRow = sheet.createRow(0);
+                Cell cell = headerRow.createCell(0);
+                cell.setCellValue("TRANS_DATE");
+                cell = headerRow.createCell(1);
+                cell.setCellValue("TYPE");
+                cell = headerRow.createCell(2);
+                cell.setCellValue("BATCH_ID");
+                cell = headerRow.createCell(3);
+                cell.setCellValue("RECORD_COUNT");
+                cell = headerRow.createCell(4);
+                cell.setCellValue("SUB_CATEGORY_1");
+                cell = headerRow.createCell(5);
+                cell.setCellValue("SUB_CATEGORY_1_TOTAL");
+                cell = headerRow.createCell(6);
+                cell.setCellValue("SUB_CATEGORY_2");
+                cell = headerRow.createCell(7);
+                cell.setCellValue("SUB_CATEGORY_2_TOTAL");
+                cell = headerRow.createCell(8);
+                cell.setCellValue("SUB_CATEGORY_3");
+                cell = headerRow.createCell(9);
+                cell.setCellValue("SUB_CATEGORY_3_TOTAL");
+
+
+                int rowNumber = 1;
+                for (AccHeader ar : accHeaders) {
+                    Row dataRow = sheet.createRow(rowNumber);
+                    dataRow.createCell(0).setCellValue(ar.getTransDate());
+                    dataRow.createCell(1).setCellValue(ar.getType());
+                    dataRow.createCell(2).setCellValue(ar.getBatchId());
+                    dataRow.createCell(3).setCellValue(ar.getRecordCount());
+                    dataRow.createCell(4).setCellValue(ar.getSubCategory1());
+                    dataRow.createCell(5).setCellValue(ar.getSubCategory1Total());
+                    dataRow.createCell(6).setCellValue(ar.getSubCategory2());
+                    dataRow.createCell(7).setCellValue(ar.getSubCategory2Total());
+                    dataRow.createCell(8).setCellValue(ar.getSubCategory3());
+                    dataRow.createCell(9).setCellValue(ar.getSubCategory3Total());
+
+                    accHeaderRepository.updateAccHeaderDetails(true,LocalDateTime.now(),ar.getHeaderId());
+
+                    rowNumber++;
+
                 }
-                if (fileOut != null) {
-                    fileOut.close();
-                }
+
+                // Define the file path where the Excel file will be saved
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_HEADER.xlsx";
+
+                Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
+
+                // Write the output to a file
+                fileOut = new FileOutputStream(filePath.toFile());
+                workbook.write(fileOut);
+                log.info("Excel file created successfully at " + filePath.toString());;
+
+                // Return the path of the created file
+                //return filePath.toString();
             } catch (IOException e) {
                 e.printStackTrace();
+                //return null;
+            } finally {
+                try {
+                    // Ensure that the workbook and file output stream are closed
+                    if (workbook != null) {
+                        workbook.close();
+                    }
+                    if (fileOut != null) {
+                        fileOut.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+            syncDocument(fileName);
+
         }
-        syncDocument(fileName);
+
     }
 
     private String generateActualCategoryCode(String tourId,String marketId){

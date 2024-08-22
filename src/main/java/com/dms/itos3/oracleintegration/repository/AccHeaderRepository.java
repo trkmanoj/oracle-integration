@@ -21,4 +21,6 @@ public interface AccHeaderRepository extends JpaRepository<AccHeader, UUID> {
 
     @Query(value = "SELECT * FROM acc_header ORDER BY headerId DESC LIMIT 2", nativeQuery = true)
     List<AccHeader> findLast2Records();
+
+    List<AccHeader> findByPrinted(boolean b);
 }
