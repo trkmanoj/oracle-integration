@@ -140,17 +140,19 @@ public class AccApServiceImpl {
             System.out.println("vatAmount=>"+ vatAmount);
             String taxCodeId = billVerificationRepository.findTaxCode(billVerification.getBillId().toString());
            // String taxCodeId = billVerification.getTaxes().stream().filter(billTaxes -> billTaxes.getTaxCode().equals("VAT18")).collect(Collectors.toList()).get(0).getTaxCode();
-           System.out.println("taxCode=>"+ taxCodeId);
+           //System.out.println("taxCode=>"+ taxCodeId);
+            TaxGroupAndIndividualTaxResponseDto tax =null;
+           if(taxCodeId != null && !taxCodeId.isEmpty()){
+               tax = this.getTax(taxCodeId);
+           }
 
-            TaxGroupAndIndividualTaxResponseDto tax = this.getTax(taxCodeId);
-            double vatRate;
-            if(tax != null){
+           double vatRate;
+           if(tax != null){
                 vatRate = tax.getTax();
-            }else {
+           }else {
                 vatRate=0.00;
-            }
+           }
             //TaxGroupAndIndividualTaxResponseDto tax = this.getTax("a81f22ba-3e6b-4973-b49b-60d697b55118");
-
 
             //batch id no idea
             //actual category how to find market id no idea
@@ -316,6 +318,11 @@ public class AccApServiceImpl {
             cell = headerRow.createCell(38);
             cell.setCellValue("ATTRIBUTE12");
 
+            if (type.equals("Inaccurate")){
+                cell = headerRow.createCell(39);
+                cell.setCellValue("REMARKS");
+            }
+
 
             int rowNumber = 1;
             for (AccAP ap : accAPList) {
@@ -359,6 +366,9 @@ public class AccApServiceImpl {
                 dataRow.createCell(36).setCellValue(ap.getAttribute10());
                 dataRow.createCell(37).setCellValue(ap.getAttribute11());
                 dataRow.createCell(38).setCellValue(ap.getAttribute12());
+
+                if (type.equals("Inaccurate"))
+                    dataRow.createCell(39).setCellValue(ap.getRemarks());
 
                 //need to update raw is printed and printed date
                 accApRepository.updateAccApDetails(true,LocalDateTime.now(),ap.getHeaderId());
