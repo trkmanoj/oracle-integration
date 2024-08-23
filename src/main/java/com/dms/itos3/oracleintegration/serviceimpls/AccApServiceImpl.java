@@ -80,6 +80,9 @@ public class AccApServiceImpl {
     @Value("${host.username}")
     private String username;
 
+    @Value("${vat.code}")
+    private String vatCode;
+
     @Value("${host.pwd}")
     private String password;
 
@@ -165,14 +168,14 @@ public class AccApServiceImpl {
                     supplierName,
                     supplierCode,
                     siteCode, //siteCode===postitos need to add
-                    billVerification.getBillDate().toString(), // bill entry date(bill date )
-                    currentTime.format(timeFormatterDateOnly), //fill write date
+                    invoiceDate(billVerification.getBillDate().toString()), // bill entry date(bill date )
+                    currentGLDate(), //fill write date
                     generateActualCategoryCode(pullTourHeaderDetails.getTourId(),pullTourHeaderDetails.getMarketId()), //actual category
                     "STANDARD",
                     billVerification.getSupplierBillNo(),  //supplier bill no
                     "LKR",  //supplier bill currency code
                     supplierBillAmount,  //Supplier bill amount (without VAT)
-                    "VAT", //
+                    vatCode, //
                     vatAmount,  //VAT amount for the supplier bill value
                     vatRate, //VAT Rate
                     "",  //empty
@@ -208,6 +211,23 @@ public class AccApServiceImpl {
 
         billVerificationRepository.updateBillVerification(true, new Date(),accAPS.stream().map(AccAP::getBillId).collect(Collectors.toList()));
 
+    }
+
+    public String currentGLDate(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        String currentdDate = now.format(formatter);
+
+        return currentdDate;
+    }
+
+    public static String invoiceDate(String billDate) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
+        LocalDateTime dateTime = LocalDateTime.parse(billDate, inputFormatter);
+
+        return dateTime.format(outputFormatter);
     }
 
     private TaxGroupAndIndividualTaxResponseDto getTax(String taxCodeId) {
