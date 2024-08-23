@@ -2,6 +2,8 @@ package com.dms.itos3.oracleintegration.serviceimpls;
 
 import com.dms.itos3.oracleintegration.entity.*;
 import com.dms.itos3.oracleintegration.repository.*;
+import com.dms.itos3.oracleintegration.util.CommonConst;
+import com.dms.itos3.oracleintegration.util.CommonResponse;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
@@ -124,7 +126,7 @@ public class AccArServiceImpl {
                         "I",
                         stringDateConvertToLocalDate(inv.getDate()),
                         LocalDate.now(),
-                        inv.getCurrency(), // LKR or itos-side invoice currency
+                        "LKR", // LKR or itos-side invoice currency
                         getOperator(inv.getOperatorId()) == null ? 0 : getOperator(inv.getOperatorId()).getAccLink2(),  // customer code
                         getOperator(inv.getOperatorId()) == null ? 0 : getOperator(inv.getOperatorId()).getAccLink1(), // customer site
                         findUser(inv.getTourHeaderID()) == null ? "" : findUser(inv.getTourHeaderID()), // sales person
@@ -132,7 +134,7 @@ public class AccArServiceImpl {
                         inv.getInvoiceWithoutTax(),
                         "VAT",//vat18
                         inv.getInvoiceTax(),
-                        18, //vat rate
+                        getTaxRate(), //vat rate
                         "",
                         0,
                         0,
@@ -256,6 +258,11 @@ public class AccArServiceImpl {
             cell = headerRow.createCell(37);
             cell.setCellValue("ATTRIBUTE12");
 
+            if (type.equals("Inaccurate")){
+                cell = headerRow.createCell(38);
+                cell.setCellValue("REMARKS");
+            }
+
 
             int rowNumber = 1;
             for (AccAR ar : accARList) {
@@ -298,6 +305,9 @@ public class AccArServiceImpl {
                 dataRow.createCell(35).setCellValue(ar.getAttribute10());
                 dataRow.createCell(36).setCellValue(ar.getAttribute11());
                 dataRow.createCell(37).setCellValue(ar.getAttribute12());
+
+                if (type.equals("Inaccurate"))
+                    dataRow.createCell(38).setCellValue(ar.getRemarks());
 
                 //need to update raw is printed and printed date
                 if (type.equals("Accurate"))
@@ -464,15 +474,15 @@ public class AccArServiceImpl {
                             "I",
                             stringDateConvertToLocalDate(inv.getDate()),
                             LocalDate.now(),
-                            inv.getCurrency(), // LKR or itos-side invoice currency
+                            "LKR", // LKR or itos-side invoice currency
                             getOperator(inv.getOperatorId()) == null ? 0 : getOperator(inv.getOperatorId()).getAccLink2(),  // customer code
                             getOperator(inv.getOperatorId()) == null ? 0 : getOperator(inv.getOperatorId()).getAccLink1(), // customer site
                             findUser(inv.getTourHeaderID()) == null ? "" : findUser(inv.getTourHeaderID()), // sales person
                             1,
                             inv.getInvoiceWithoutTax(),
-                            "VAT",//vat18
+                            vatCode,//vat18
                             inv.getInvoiceTax(),
-                            18, //vat rate
+                            getTaxRate(), //vat rate
                             "",
                             0,
                             0,
@@ -717,23 +727,22 @@ public class AccArServiceImpl {
         return date.format(formatter);
     }
 
-    /*private double getTaxRate(String taxCode) {
-        //HashMap<String, Object> hotel = null;
-        if (!taxCode.equals("") || !taxCode.equals(null)) {
+    private double getTaxRate() {
+        Map<String,Object> tax = new HashMap<>();
             ResponseEntity<CommonResponse> response = webClient.build()
                     .get()
-                    .uri(accommodationBaseUrl + "/hotel/" + hotelId)
+                    .uri(financeBaseUrl + "/tax/" + vatCode)
                     .retrieve()
                     .toEntity(CommonResponse.class)
                     .block();
 
-            if (response.getBody().getStatus() == CommonConst.SUCCESS_CODE) {
-                hotel = (HashMap<String, Object>) response.getBody().getPayload().get(0);
+            if (response.getBody().getStatus() == 1) {
+                tax = (HashMap<String, Object>) response.getBody().getPayload().get(0);
+                return (double) tax.get("percentage");
             } else {
-                log.info("Error occurred while the get hotel details rest call.");
+                log.info("Error occurred while the get finance details rest call.");
+                return 0.0;
             }
-        }
-        return hotel;
-    }*/
+    }
 
 }
