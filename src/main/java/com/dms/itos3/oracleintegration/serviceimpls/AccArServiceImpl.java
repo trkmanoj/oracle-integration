@@ -88,6 +88,9 @@ public class AccArServiceImpl {
     @Value("${remote.file.path}")
     private String remoteFilePath;
 
+    @Value("${local.file.path}")
+    private String localPath;
+
     @Value("${vat.code}")
     private String vatCode;
 
@@ -100,7 +103,7 @@ public class AccArServiceImpl {
     }
 
 
-    //@Scheduled(cron = "0 0 18 * * ?")
+    @Scheduled(cron = "0 0 21 * * ?")
     @Transactional
     public void createAr(){
 
@@ -324,7 +327,7 @@ public class AccArServiceImpl {
                 fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_INACCURATE_AR.csv";
             }
 
-            Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
+            Path filePath = Paths.get(localPath, fileName);
 
             // Write the output to a file
             fileOut = new FileOutputStream(filePath.toFile());
@@ -372,7 +375,7 @@ public class AccArServiceImpl {
     }
 
     @Transactional
-    //@Scheduled(cron = "0 0 19 * * ?")
+    @Scheduled(cron = "0 0 22 * * ?")
     public void validateAndPrint() throws IOException {
 
         List<AccAR> accurateList = new ArrayList<>();
@@ -430,7 +433,7 @@ public class AccArServiceImpl {
 
     public void syncDocument(String fileName){
 
-        String localFilePath = System.getProperty("user.home") + "/Documents/"+fileName;
+        String localFilePath = localPath+fileName;
 
         try {
             JSch jsch = new JSch();
@@ -514,7 +517,7 @@ public class AccArServiceImpl {
 
 
     @Transactional
-    //@Scheduled(cron = "0 0 19 * * ?")
+    @Scheduled(cron = "0 0 23 * * ?")
     public void printHeader(){
 
         List<AccHeader> accHeaders = accHeaderRepository.findByPrinted(false);
@@ -576,7 +579,7 @@ public class AccArServiceImpl {
                 // Define the file path where the Excel file will be saved
                 fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_HEADER.csv";
 
-                Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
+                Path filePath = Paths.get(localPath, fileName);
 
                 // Write the output to a file
                 fileOut = new FileOutputStream(filePath.toFile());
