@@ -319,9 +319,9 @@ public class AccArServiceImpl {
 
             // Define the file path where the Excel file will be saved
             if (type.equals("Accurate")){
-                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_AR.xlsx";
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_AR.csv";
             }else {
-                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_INACCURATE_AR.xlsx";
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_INACCURATE_AR.csv";
             }
 
             Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
@@ -513,6 +513,8 @@ public class AccArServiceImpl {
     }
 
 
+    @Transactional
+    //@Scheduled(cron = "0 0 19 * * ?")
     public void printHeader(){
 
         List<AccHeader> accHeaders = accHeaderRepository.findByPrinted(false);
@@ -572,7 +574,7 @@ public class AccArServiceImpl {
                 }
 
                 // Define the file path where the Excel file will be saved
-                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_HEADER.xlsx";
+                fileName = formatDateTimeForFileName(LocalDateTime.now()) + "_HEADER.csv";
 
                 Path filePath = Paths.get(System.getProperty("user.home"), "Documents", fileName);
 

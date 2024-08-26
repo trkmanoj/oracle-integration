@@ -25,7 +25,7 @@ public class Controller {
 
     @PostMapping("/print")
     public void print() throws IOException {
-        accArService.printHeader();
+        accArService.validateAndPrint();
     }
 
     @PostMapping("/savebill")
