@@ -80,6 +80,9 @@ public class AccApServiceImpl {
     @Value("${host.username}")
     private String username;
 
+    @Value("${vat.code}")
+    private String vatCode;
+
     @Value("${host.pwd}")
     private String password;
 
@@ -140,17 +143,19 @@ public class AccApServiceImpl {
             System.out.println("vatAmount=>"+ vatAmount);
             String taxCodeId = billVerificationRepository.findTaxCode(billVerification.getBillId().toString());
            // String taxCodeId = billVerification.getTaxes().stream().filter(billTaxes -> billTaxes.getTaxCode().equals("VAT18")).collect(Collectors.toList()).get(0).getTaxCode();
-           System.out.println("taxCode=>"+ taxCodeId);
+           //System.out.println("taxCode=>"+ taxCodeId);
+            TaxGroupAndIndividualTaxResponseDto tax =null;
+           if(taxCodeId != null && !taxCodeId.isEmpty()){
+               tax = this.getTax(taxCodeId);
+           }
 
-            TaxGroupAndIndividualTaxResponseDto tax = this.getTax(taxCodeId);
-            double vatRate;
-            if(tax != null){
+           double vatRate;
+           if(tax != null){
                 vatRate = tax.getTax();
-            }else {
+           }else {
                 vatRate=0.00;
-            }
+           }
             //TaxGroupAndIndividualTaxResponseDto tax = this.getTax("a81f22ba-3e6b-4973-b49b-60d697b55118");
-
 
             //batch id no idea
             //actual category how to find market id no idea
@@ -163,14 +168,14 @@ public class AccApServiceImpl {
                     supplierName,
                     supplierCode,
                     siteCode, //siteCode===postitos need to add
-                    billVerification.getBillDate().toString(), // bill entry date(bill date )
-                    currentTime.format(timeFormatterDateOnly), //fill write date
+                    invoiceDate(billVerification.getBillDate().toString()), // bill entry date(bill date )
+                    currentGLDate(), //fill write date
                     generateActualCategoryCode(pullTourHeaderDetails.getTourId(),pullTourHeaderDetails.getMarketId()), //actual category
                     "STANDARD",
                     billVerification.getSupplierBillNo(),  //supplier bill no
                     "LKR",  //supplier bill currency code
                     supplierBillAmount,  //Supplier bill amount (without VAT)
-                    "VAT", //
+                    vatCode, //
                     vatAmount,  //VAT amount for the supplier bill value
                     vatRate, //VAT Rate
                     "",  //empty
@@ -206,6 +211,23 @@ public class AccApServiceImpl {
 
         billVerificationRepository.updateBillVerification(true, new Date(),accAPS.stream().map(AccAP::getBillId).collect(Collectors.toList()));
 
+    }
+
+    public String currentGLDate(){
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        String currentdDate = now.format(formatter);
+
+        return currentdDate;
+    }
+
+    public static String invoiceDate(String billDate) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
+        LocalDateTime dateTime = LocalDateTime.parse(billDate, inputFormatter);
+
+        return dateTime.format(outputFormatter);
     }
 
     private TaxGroupAndIndividualTaxResponseDto getTax(String taxCodeId) {
@@ -316,6 +338,11 @@ public class AccApServiceImpl {
             cell = headerRow.createCell(38);
             cell.setCellValue("ATTRIBUTE12");
 
+            if (type.equals("Inaccurate")){
+                cell = headerRow.createCell(39);
+                cell.setCellValue("REMARKS");
+            }
+
 
             int rowNumber = 1;
             for (AccAP ap : accAPList) {
@@ -359,6 +386,9 @@ public class AccApServiceImpl {
                 dataRow.createCell(36).setCellValue(ap.getAttribute10());
                 dataRow.createCell(37).setCellValue(ap.getAttribute11());
                 dataRow.createCell(38).setCellValue(ap.getAttribute12());
+
+                if (type.equals("Inaccurate"))
+                    dataRow.createCell(39).setCellValue(ap.getRemarks());
 
                 //need to update raw is printed and printed date
                 accApRepository.updateAccApDetails(true,LocalDateTime.now(),ap.getHeaderId());
